@@ -19,11 +19,17 @@
         <!-- Detect the magazine cover as an AR marker -->
         <a-marker type="pattern" url="pattern-magazine.patt">
             <!-- Video Overlay (adjust width and height to match the magazine) -->
-            <a-video src="mgitmusingsvideo (1).mp4s" width="10" height="15" position="0 0 0" autoplay loop></a-video>
+            <a-video src="mgitmusingsvideo (1).mp4" width="10" height="15" position="0 0 0" autoplay loop></a-video>
         </a-marker>
 
         <a-entity camera></a-entity>
     </a-scene>
-
+    <script>
+      navigator.mediaDevices.getUserMedia({
+        video: { width: { ideal: 1920 }, height: { ideal: 1080 }, facingMode: "environment" }
+      }).then((stream) => {
+        document.querySelector("video").srcObject = stream;
+      }).catch((error) => console.error("Camera error:", error));
+    </script>
 </body>
 </html>
