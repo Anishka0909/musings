@@ -11,61 +11,68 @@
 
     <style>
         body { margin: 0; overflow: hidden; }
+        #cameraSelect { position: absolute; top: 10px; left: 10px; z-index: 1000; }
     </style>
 </head>
 <body>
 
+    <!-- Camera selection dropdown -->
+    <select id="cameraSelect"></select>
+
     <!-- Hidden video element for manual camera selection -->
     <video id="camera-feed" autoplay playsinline style="display: none;"></video>
 
-    <a-scene embedded arjs>
+    <a-scene embedded arjs="sourceType: webcam; videoTexture: true; debugUIEnabled: false;">
         <!-- Detect the magazine cover as an AR marker -->
         <a-marker type="pattern" url="pattern-magazine.patt">
             <!-- Video Overlay (adjust width and height to match the magazine) -->
-            <a-video src="mgitmusingsvideo (1).mp4" width="10" height="15" position="0 0 0" autoplay loop></a-video>
+            <a-video src="mgitmusingsvideo.mp4" width="10" height="15" position="0 0 0" autoplay loop></a-video>
         </a-marker>
 
         <a-entity camera></a-entity>
     </a-scene>
 
     <script>
-      async function selectCorrectCamera() {
-          try {
-              // Get the list of all video input devices (cameras)
-              const devices = await navigator.mediaDevices.enumerateDevices();
-              const videoDevices = devices.filter(device => device.kind === "videoinput");
+        async function setupCameraSelection() {
+            try {
+                const devices = await navigator.mediaDevices.enumerateDevices();
+                const videoDevices = devices.filter(device => device.kind === "videoinput");
 
-              // Find the correct rear camera (typically the one with the highest resolution)
-              let selectedDeviceId = null;
-              for (let device of videoDevices) {
-                  if (device.label.toLowerCase().includes("back") || device.label.toLowerCase().includes("rear")) {
-                      selectedDeviceId = device.deviceId;
-                      break; // Select the first back camera found
-                  }
-              }
+                const select = document.getElementById("cameraSelect");
+                videoDevices.forEach((device, index) => {
+                    const option = document.createElement("option");
+                    option.value = device.deviceId;
+                    option.text = device.label || `Camera ${index + 1}`;
+                    select.appendChild(option);
+                });
 
-              // If no specific rear camera is found, use the last camera in the list
-              if (!selectedDeviceId && videoDevices.length > 0) {
-                  selectedDeviceId = videoDevices[videoDevices.length - 1].deviceId;
-              }
+                select.addEventListener("change", async () => {
+                    await startCamera(select.value);
+                });
 
-              // Request video stream from the selected camera
-              const stream = await navigator.mediaDevices.getUserMedia({
-                  video: { deviceId: selectedDeviceId ? { exact: selectedDeviceId } : undefined, width: { ideal: 1920 }, height: { ideal: 1080 } }
-              });
+                // Start with the first available camera
+                if (videoDevices.length > 0) {
+                    await startCamera(videoDevices[0].deviceId);
+                }
+            } catch (error) {
+                console.error("Error accessing camera:", error);
+            }
+        }
 
-              // Attach the stream to the hidden video element
-              document.querySelector("#camera-feed").srcObject = stream;
+        async function startCamera(deviceId) {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({
+                    video: { deviceId: { exact: deviceId }, width: { ideal: 1920 }, height: { ideal: 1080 } }
+                });
 
-          } catch (error) {
-              console.error("Camera selection error:", error);
-          }
-      }
+                document.querySelector("#camera-feed").srcObject = stream;
+            } catch (error) {
+                console.error("Camera error:", error);
+            }
+        }
 
-      // Run the function to select the correct camera
-      selectCorrectCamera();
+        setupCameraSelection();
     </script>
 
 </body>
 </html>
-
