@@ -15,6 +15,9 @@
 </head>
 <body>
 
+    <!-- Hidden video element for manual camera selection -->
+    <video id="camera-feed" autoplay playsinline style="display: none;"></video>
+
     <a-scene embedded arjs>
         <!-- Detect the magazine cover as an AR marker -->
         <a-marker type="pattern" url="pattern-magazine.patt">
@@ -24,12 +27,45 @@
 
         <a-entity camera></a-entity>
     </a-scene>
+
     <script>
-      navigator.mediaDevices.getUserMedia({
-        video: { width: { ideal: 1920 }, height: { ideal: 1080 }, facingMode: "environment" }
-      }).then((stream) => {
-        document.querySelector("video").srcObject = stream;
-      }).catch((error) => console.error("Camera error:", error));
+      async function selectCorrectCamera() {
+          try {
+              // Get the list of all video input devices (cameras)
+              const devices = await navigator.mediaDevices.enumerateDevices();
+              const videoDevices = devices.filter(device => device.kind === "videoinput");
+
+              // Find the correct rear camera (typically the one with the highest resolution)
+              let selectedDeviceId = null;
+              for (let device of videoDevices) {
+                  if (device.label.toLowerCase().includes("back") || device.label.toLowerCase().includes("rear")) {
+                      selectedDeviceId = device.deviceId;
+                      break; // Select the first back camera found
+                  }
+              }
+
+              // If no specific rear camera is found, use the last camera in the list
+              if (!selectedDeviceId && videoDevices.length > 0) {
+                  selectedDeviceId = videoDevices[videoDevices.length - 1].deviceId;
+              }
+
+              // Request video stream from the selected camera
+              const stream = await navigator.mediaDevices.getUserMedia({
+                  video: { deviceId: selectedDeviceId ? { exact: selectedDeviceId } : undefined, width: { ideal: 1920 }, height: { ideal: 1080 } }
+              });
+
+              // Attach the stream to the hidden video element
+              document.querySelector("#camera-feed").srcObject = stream;
+
+          } catch (error) {
+              console.error("Camera selection error:", error);
+          }
+      }
+
+      // Run the function to select the correct camera
+      selectCorrectCamera();
     </script>
+
 </body>
 </html>
+
