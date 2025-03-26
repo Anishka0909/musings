@@ -32,5 +32,53 @@
         <a-entity camera></a-entity>
     </a-scene>
 
+    <script>
+        async function setupCameraSelection() {
+            try {
+                const devices = await navigator.mediaDevices.enumerateDevices();
+                const videoDevices = devices.filter(device => device.kind === "videoinput");
+                const select = document.getElementById("cameraSelect");
+                
+                videoDevices.forEach((device, index) => {
+                    const option = document.createElement("option");
+                    option.value = device.deviceId;
+                    option.text = device.label || `Camera ${index + 1}`;
+                    select.appendChild(option);
+                });
+                
+                select.addEventListener("change", async () => {
+                    await startCamera(select.value);
+                });
+
+                if (videoDevices.length > 0) {
+                    await startCamera(videoDevices[0].deviceId);
+                }
+            } catch (error) {
+                console.error("Error accessing camera:", error);
+            }
+        }
+
+        async function startCamera(deviceId) {
+            try {
+                const constraints = {
+                    video: { deviceId: { exact: deviceId }, width: { ideal: 1920 }, height: { ideal: 1080 } }
+                };
+                
+                const stream = await navigator.mediaDevices.getUserMedia(constraints);
+                document.querySelector("#camera-feed").srcObject = stream;
+
+                // 🔥 Force AR.js to update the camera 🔥
+                const arScene = document.querySelector("a-scene");
+                arScene.setAttribute("arjs", `sourceType: webcam; deviceId: ${deviceId};`);
+
+                console.log("Switched to camera:", deviceId);
+            } catch (error) {
+                console.error("Camera error:", error);
+            }
+        }
+
+        setupCameraSelection();
+    </script>
+
 </body>
 </html>
