@@ -19,13 +19,10 @@
     <!-- Camera selection dropdown -->
     <select id="cameraSelect"></select>
 
-    <!-- Hidden video element for manual camera selection -->
-    <video id="camera-feed" autoplay playsinline style="display: none;"></video>
-
-    <a-scene embedded arjs="sourceType: webcam; videoTexture: true; debugUIEnabled: false;">
+    <a-scene embedded arjs>
         <!-- Detect the magazine cover as an AR marker -->
         <a-marker preset="custom" type="pattern" url="./pattern-MUSINGS-2025.patt">
-            <!-- Video Overlay (adjust width and height to match the magazine) -->
+            <!-- Video Overlay -->
             <a-video src="./mgitmusingsvideo.mp4" width="10" height="15" position="0 0 0" autoplay loop></a-video>
         </a-marker>
 
@@ -39,6 +36,8 @@
                 const videoDevices = devices.filter(device => device.kind === "videoinput");
 
                 const select = document.getElementById("cameraSelect");
+                select.innerHTML = ""; // Clear existing options
+
                 videoDevices.forEach((device, index) => {
                     const option = document.createElement("option");
                     option.value = device.deviceId;
@@ -46,13 +45,11 @@
                     select.appendChild(option);
                 });
 
-                select.addEventListener("change", async () => {
-                    await startCamera(select.value);
-                });
+                select.addEventListener("change", () => startCamera(select.value));
 
                 // Start with the first available camera
                 if (videoDevices.length > 0) {
-                    await startCamera(videoDevices[0].deviceId);
+                    startCamera(videoDevices[0].deviceId);
                 }
             } catch (error) {
                 console.error("Error accessing camera:", error);
@@ -61,11 +58,26 @@
 
         async function startCamera(deviceId) {
             try {
-                const stream = await navigator.mediaDevices.getUserMedia({
-                    video: { deviceId: { exact: deviceId }, width: { ideal: 1920 }, height: { ideal: 1080 } }
-                });
+                const constraints = {
+                    video: { deviceId: { exact: deviceId } }
+                };
 
-                document.querySelector("#camera-feed").srcObject = stream;
+                const stream = await navigator.mediaDevices.getUserMedia(constraints);
+
+                // Set AR.js to use the new stream
+                let arScene = document.querySelector("a-scene");
+                arScene.setAttribute("arjs", `sourceType: webcam; videoTexture: true;`);
+                
+                let videoElement = document.querySelector("video");
+                if (!videoElement) {
+                    videoElement = document.createElement("video");
+                    videoElement.setAttribute("autoplay", "");
+                    videoElement.setAttribute("playsinline", "");
+                    videoElement.style.display = "none";
+                    document.body.appendChild(videoElement);
+                }
+                videoElement.srcObject = stream;
+
             } catch (error) {
                 console.error("Camera error:", error);
             }
