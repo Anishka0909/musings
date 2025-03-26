@@ -3,78 +3,21 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AR Magazine Video</title>
-
-    <!-- Include A-Frame and AR.js -->
-    <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/ar.js@1.7.2/aframe/build/aframe-ar.min.js"></script>
-
-    <!-- Favicon Fix -->
-    <link rel="icon" href="data:,">
-
-    <style>
-        body { margin: 0; overflow: hidden; }
-        #cameraSelect { position: absolute; top: 10px; left: 10px; z-index: 1000; }
-    </style>
+    <title>Camera Test</title>
 </head>
 <body>
-
-    <!-- Camera selection dropdown -->
-    <select id="cameraSelect"></select>
-
-    <a-scene embedded arjs>
-        <a-marker type="pattern" url="pattern-MUSINGS-2025.patt">
-            <a-video src="mgitmusingsvideo.mp4" width="10" height="15" position="0 0 0" autoplay loop></a-video>
-        </a-marker>
-        <a-entity camera></a-entity>
-    </a-scene>
-
+    <video id="videoElement" autoplay playsinline style="width: 100%;"></video>
     <script>
-        const cameraSelect = document.getElementById('cameraSelect');
-
-        async function getCameras() {
+        async function startCamera() {
             try {
-                const devices = await navigator.mediaDevices.enumerateDevices();
-                const videoDevices = devices.filter(device => device.kind === 'videoinput');
-
-                cameraSelect.innerHTML = ''; // Clear previous options
-                videoDevices.forEach((device, index) => {
-                    const option = document.createElement('option');
-                    option.value = device.deviceId;
-                    option.textContent = `Camera ${index + 1} - ${device.label || 'Unknown'}`;
-                    cameraSelect.appendChild(option);
-                });
-
-                if (videoDevices.length > 0) {
-                    startCamera(videoDevices[0].deviceId);
-                }
+                const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+                document.getElementById('videoElement').srcObject = stream;
             } catch (err) {
-                console.error('Error accessing cameras:', err);
+                alert(`Camera Error: ${err.name}\nMessage: ${err.message}`);
+                console.error('Camera error:', err);
             }
         }
-
-        async function startCamera(deviceId) {
-            try {
-                const constraints = {
-                    video: { deviceId: { exact: deviceId } }
-                };
-
-                const stream = await navigator.mediaDevices.getUserMedia(constraints);
-                document.querySelector('a-scene').setAttribute('arjs', `sourceType: webcam; sourceWidth:1280; sourceHeight:720; displayWidth:1280; displayHeight:720;`);
-
-                console.log('Camera started:', deviceId);
-            } catch (err) {
-                alert(`Webcam Error\nName: ${err.name}\nMessage: ${err.message}`);
-                console.error('Webcam error:', err);
-            }
-        }
-
-        cameraSelect.addEventListener('change', (event) => {
-            startCamera(event.target.value);
-        });
-
-        getCameras();
+        startCamera();
     </script>
-
 </body>
 </html>
