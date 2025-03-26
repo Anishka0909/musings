@@ -22,7 +22,8 @@
     <!-- Hidden video element for manual camera selection -->
     <video id="camera-feed" autoplay playsinline style="display: none;"></video>
 
-    <a-scene embedded arjs="sourceType: webcam; videoTexture: true; debugUIEnabled: false;">
+    <a-scene embedded arjs="sourceType: webcam; debugUIEnabled: false;">
+
         <!-- Detect the magazine cover as an AR marker -->
         <a-marker type="pattern" url="pattern-MUSINGS-2025.patt">
             <!-- Video Overlay (adjust width and height to match the magazine) -->
